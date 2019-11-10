@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-server
+spec:
+  selector:
+    matchLabels:
+      app: web-store
+  replicas: 3
+  template:
+    metadata:
+      labels:
+        app: web-store
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app
+                operator: In
+                values:
+                - web-store
+            topologyKey: "kubernetes.io/hostname"
+      containers:
+      - name: web-app
+        image: nginx
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: web-store-service
+spec:
+  selector:
+    app: web-store
+  ports:
+   - protocol: TCP
+     port: 80
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: web-store-ingress-resource
+spec:
+  tls:
+  - hosts:
+    - ongkw.xyz
+    secretName: ongkw.xyz
+  rules:
+  - host: ongkw.xyz
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: web-store-service
+          servicePort: 80
